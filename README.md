@@ -28,20 +28,25 @@
    ```powershell
    .\biorand-seed.ps1
    ```
+    or without having to download
 
-2. **Login to Biorand**
+   ```powershell
+   irm https://raw.githubusercontent.com/Laezor/biorand-seed/refs/heads/main/biorand-seed.ps1 | iex
+   ```
+
+3. **Login to Biorand**
    - If no API token is found in the configuration file, the script will prompt you to log in using your Biorand email and verification code.
 
-3. **Select a Randomizer Profile**
+4. **Select a Randomizer Profile**
    - Choose a profile from the displayed list by entering its ID.
 
-4. **Generate and Download a Seed**
+5. **Generate and Download a Seed**
    - The script will generate a random seed, query its status, and download the seed zip file upon completion.
 
-5. **Unzip and Install the Seed**
+6. **Unzip and Install the Seed**
    - The script will automatically unzip the seed into the specified Resident Evil 4 installation directory.
 
-6. **Clean Up Logs**
+7. **Clean Up Logs**
    - The script will delete temporary log files created during the process.
 
 ---
