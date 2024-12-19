@@ -28,11 +28,7 @@
    ```powershell
    .\biorand-seed.ps1
    ```
-    or without having to download
-
-   ```powershell
-   irm https://raw.githubusercontent.com/Laezor/biorand-seed/refs/heads/main/biorand-seed.ps1 | iex
-   ```
+    
 
 3. **Login to Biorand**
    - If no API token is found in the configuration file, the script will prompt you to log in using your Biorand email and verification code.
