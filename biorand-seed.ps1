@@ -304,7 +304,7 @@ try {
     Unzip-Seed -ZipPath $zipPath -Dest $config.RE4InstallPath
     Write-Host "Reseeding completed successfully!"
     Delete-Logs
-    Write-Host "Have fun in your biorand 4 permadeath run!" -ForegroundColor Green
+    Write-Host "Have fun in your biorand permadeath run! - https://re4r.biorand.net" -ForegroundColor Green
 } catch {
     Write-Host "Failed to unzip seed: $_" -ForegroundColor Red
     exit 1
