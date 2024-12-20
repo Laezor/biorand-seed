@@ -109,7 +109,7 @@ function Login-Biorand {
     $response = Invoke-RestMethod -Uri "https://api.biorand.net/auth/signin" -Method POST -Headers @{ "Content-Type" = "application/json" } -Body (@{ email = $email; code = $code } | ConvertTo-Json -Depth 2)
 
     if ($response.token) {
-        $configPath = "$env:USERPROFILE/reseed-config.json"
+        $configPath = "./reseed-config.json"
         $config = if (Test-Path $configPath) {
             Get-Content $configPath | ConvertFrom-Json
         } else {
