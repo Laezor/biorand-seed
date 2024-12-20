@@ -47,12 +47,15 @@ $DeleteLogsFromExtraction = @(
 )
 
 function Delete-Logs {
+    param ($RE4Path)
+
     foreach ($file in $DeleteLogsFromExtraction) {
-        if (Test-Path $file) {
-            Remove-Item $file -Force
-            Write-Host "Deleted: $file" -ForegroundColor Green
+        $filePath = Join-Path -Path $RE4Path -ChildPath $file
+        if (Test-Path $filePath) {
+            Remove-Item $filePath -Force
+            Write-Host "Deleted: $filePath" -ForegroundColor Green
         } else {
-            Write-Host "File not found: $file" -ForegroundColor Yellow
+            Write-Host "File not found: $filePath" -ForegroundColor Yellow
         }
     }
 }
