@@ -46,16 +46,6 @@
 
 ---
 
-## Profiles and IDs
-| Profile Name                                       | ID    |
-|---------------------------------------------------|-------|
-| Main Game - Balanced Combat Randomizer by 7rayD   | 7     |
-| Main Game - Challenging Randomizer by 7rayD       | 455   |
-| Separate Ways - Challenging (WIP) by 7rayD        | 9919  |
-| Separate Ways - Balanced (WIP) by 7rayD           | 10415 |
-
----
-
 ## Configuration File
 The `reseed-config.json` file contains the following fields:
 ```json
