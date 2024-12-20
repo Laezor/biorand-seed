@@ -226,7 +226,7 @@ try {
     Write-Host "Profile name: $($profile.name)"
     Write-Host "Profile description: $($profile.description)"
 } catch {
-    Write-Host "Error: $_" -ForegroundColor Red
+    Write-Host "Error during profile retrieval: $_" -ForegroundColor Red
     exit 1
 }
 Write-Host ""
