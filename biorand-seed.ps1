@@ -306,7 +306,7 @@ Write-Host "Unzipping seed zip..."
 try {
     Unzip-Seed -ZipPath $zipPath -Dest $config.RE4InstallPath
     Write-Host "Reseeding completed successfully!"
-    Delete-Logs
+    Delete-Logs -RE4Path $config.RE4InstallPath
     Write-Host "Have fun in your biorand permadeath run! - https://re4r.biorand.net" -ForegroundColor Green
 } catch {
     Write-Host "Failed to unzip seed: $_" -ForegroundColor Red
