@@ -31,7 +31,6 @@
 #>
 
 # Constants
-$Separator = "=" * 32
 $Profiles = @{
     "Main Game - Balanced Combat Randomizer by 7rayD" = 7
     "Main Game - Challenging Randomizer by 7rayD"     = 455
