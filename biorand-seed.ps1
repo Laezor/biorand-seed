@@ -61,7 +61,7 @@ function Check-ForUpdates {
     try {
         $response = Invoke-RestMethod -Uri $tagsUrl -Method GET
         $latestTag = $response[0].name
-        $latestVersion = $latestTag.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
+        $latestVersion = $latestTag.TrimStart('v') # Assuming tags that are remove v 'v1.3'
         Write-Host "Current Version: $currentVersion"
         Write-Host "Latest Version from GitHub: $latestVersion"
         if ($latestVersion -gt $currentVersion) {
