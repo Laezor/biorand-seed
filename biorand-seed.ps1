@@ -56,11 +56,15 @@ $GamePath = "C:\\Path\\To\\RE4\\Install"
 
 function Check-ForUpdates {
     $currentVersion = "1.2" # Current script version
-    $updateUrl = "https://github.com/Laezor/biorand-seed/releases/tag/v1.1" # URL to check for the latest version
-    $scriptUrl = "https://github.com/Laezor/biorand-seed/releases/download/$currentVersion/biorand-seed-main.zip" # URL to download the latest script
+    $tagsUrl = "https://api.github.com/repos/laezor/biorand-seed/tags"
+    $scriptUrl = "https://raw.githubusercontent.com/laezor/biorand-seed/main/biorand-seed.ps1" # URL to download the latest script
     try {
-        $latestVersion = Invoke-RestMethod -Uri $updateUrl -Method GET
-        if ($latestVersion -ne $currentVersion) {
+        $response = Invoke-RestMethod -Uri $tagsUrl -Method GET
+        $latestTag = $response[0].name
+        $latestVersion = $latestTag.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
+        Write-Host "Current Version: $currentVersion"
+        Write-Host "Latest Version from GitHub: $latestVersion"
+        if ($latestVersion -gt $currentVersion) {
             Write-Host "A new version ($latestVersion) is available. Downloading update..." -ForegroundColor Cyan
             Invoke-WebRequest -Uri $scriptUrl -OutFile $MyInvocation.MyCommand.Path -UseBasicParsing
             Write-Host "Update downloaded. Please restart the script." -ForegroundColor Green
@@ -73,6 +77,7 @@ function Check-ForUpdates {
     catch {
         Write-Host "Failed to check for updates: $_" -ForegroundColor Red
     }
+ 
 }
  
 
@@ -227,6 +232,7 @@ function Unzip-Seed {
 }
 
 # Main Script
+Check-ForUpdates
 Write-Host "Select a randomizer profile:"
 $Profiles.GetEnumerator() | ForEach-Object {
     Write-Host "$($_.Value): $($_.Key)"
