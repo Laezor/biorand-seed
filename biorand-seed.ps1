@@ -55,25 +55,32 @@ $GamePath = "C:\\Path\\To\\RE4\\Install"
 
 function Check-ForUpdates {
     $currentVersion = "1.2" # Current script version
-    $tagsUrl = "https://api.github.com/repos/laezor/biorand-seed/tags"
+    $releasesUrl = "https://api.github.com/repos/laezor/biorand-seed/releases/latest"
     $scriptUrl = "https://raw.githubusercontent.com/laezor/biorand-seed/main/biorand-seed.ps1" # URL to download the latest script
     try {
-        $response = Invoke-RestMethod -Uri $tagsUrl -Method GET
-        $latestTag = $response[0].name
-        $latestVersion = $latestTag.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
-        Write-Host "Current Version: $currentVersion"
-        Write-Host "Latest Version from GitHub: $latestVersion"
+        $response = Invoke-RestMethod -Uri $releasesUrl -Method GET
+        $latestVersion = $response.tag_name.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
+        $description = $response.body
         if ($latestVersion -gt $currentVersion) {
-            Write-Host "A new version ($latestVersion) is available. Downloading update..." -ForegroundColor Cyan
-            
-            # Alternative way to get the script path
-            $scriptPath = $PSCommandPath
-            if (-not $scriptPath) {
-                throw "Script path is null or empty."
+            Write-Host "Current Version: $currentVersion"
+            Write-Host "Latest Version from GitHub: $latestVersion"
+            Write-Host "Description: $description"
+            $updateConfirmation = Read-Host "A new version ($latestVersion) is available. Do you want to update? (y/n)"
+            if ($updateConfirmation -eq "y") {
+                Write-Host "Downloading update..." -ForegroundColor Cyan
+                
+                # Alternative way to get the script path
+                $scriptPath = $PSCommandPath
+                if (-not $scriptPath) {
+                    throw "Script path is null or empty."
+                }
+                Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
+                Write-Host "Update downloaded. Please restart the script." -ForegroundColor Green
+                exit 0
             }
-            Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
-            Write-Host "Update downloaded. Please restart the script." -ForegroundColor Green
-            exit 0
+            else {
+                Write-Host "Update skipped." -ForegroundColor Yellow
+            }
         }
         else {
             Write-Host "You are using the latest version." -ForegroundColor Green
@@ -81,9 +88,7 @@ function Check-ForUpdates {
     }
     catch {
         Write-Host "Failed to check for updates: $_" -ForegroundColor Red
-    }
- 
- 
+    } 
 }
  
 
