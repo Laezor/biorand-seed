@@ -91,7 +91,6 @@ function Check-ForUpdates {
     } 
 }
  
-
 function Delete-Logs {
     param ($RE4Path)
 
