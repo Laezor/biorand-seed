@@ -60,12 +60,18 @@ function Check-ForUpdates {
     try {
         $response = Invoke-RestMethod -Uri $tagsUrl -Method GET
         $latestTag = $response[0].name
-        $latestVersion = $latestTag.TrimStart('v') # Assuming tags that are remove v 'v1.3'
+        $latestVersion = $latestTag.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
         Write-Host "Current Version: $currentVersion"
         Write-Host "Latest Version from GitHub: $latestVersion"
         if ($latestVersion -gt $currentVersion) {
             Write-Host "A new version ($latestVersion) is available. Downloading update..." -ForegroundColor Cyan
-            Invoke-WebRequest -Uri $scriptUrl -OutFile $MyInvocation.MyCommand.Path -UseBasicParsing
+            
+            # Alternative way to get the script path
+            $scriptPath = $PSCommandPath
+            if (-not $scriptPath) {
+                throw "Script path is null or empty."
+            }
+            Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
             Write-Host "Update downloaded. Please restart the script." -ForegroundColor Green
             exit 0
         }
@@ -76,6 +82,7 @@ function Check-ForUpdates {
     catch {
         Write-Host "Failed to check for updates: $_" -ForegroundColor Red
     }
+ 
  
 }
  
