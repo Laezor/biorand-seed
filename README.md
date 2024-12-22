@@ -7,11 +7,13 @@
 - Support for various randomizer profiles:
   - **Main Game - Balanced Combat Randomizer** by 7rayD
   - **Main Game - Challenging Randomizer** by 7rayD
+  - **Main Game - Toxic Combat** by 7rayD
   - **Separate Ways - Challenging (WIP)** by 7rayD
   - **Separate Ways - Balanced (WIP)** by 7rayD
 - Automatic configuration management.
 - Seed generation and downloading.
 - Automatic unzipping.
+- Auto-Updater prompt.
 
 ---
 
