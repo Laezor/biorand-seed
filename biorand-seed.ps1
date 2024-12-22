@@ -2,7 +2,7 @@
     Script Name: BIORAND Randomizer Seed Generator
     Author: Laezor
     Discord: Laezor#5385
-    Version: 1.3
+    Version: 1.4
     Created: 2024-12-18
     Updated: 2024-12-22
 
@@ -31,14 +31,6 @@
 #>
 
 # Constants
-$Profiles = @{
-    "Main Game - Balanced Combat Randomizer by 7rayD" = 7
-    "Main Game - Challenging Randomizer by 7rayD"     = 455
-    "Main Game - Toxic Combat by 7rayD"               = 11845
-    "Separate Ways - Challenging *WIP by 7rayD"       = 9919
-    "Separate Ways - Balanced *WIP by 7rayD"          = 10415
-}
-
 $DeleteLogsFromExtraction = @(
     "config.json",
     "output_leon.log",
@@ -53,9 +45,8 @@ $GamePath = "C:\\Path\\To\\RE4\\Install"
 
 
 #functions
-
 function Check-ForUpdates {
-    $currentVersion = "1.3" # Current script version
+    $currentVersion = "1.4" # Current script version
     $releasesUrl = "https://api.github.com/repos/laezor/biorand-seed/releases/latest"
     $scriptUrl = "https://raw.githubusercontent.com/laezor/biorand-seed/main/biorand-seed.ps1" # URL to download the latest script
     try {
@@ -91,7 +82,16 @@ function Check-ForUpdates {
         Write-Host "Failed to check for updates: $_" -ForegroundColor Red
     } 
 }
- 
+
+function Get-BiorandProfiles {
+    param ($Token)
+    
+    $url = "$BaseApi/profile"
+    $headers = @{ "Authorization" = "Bearer $Token" }
+    $response = Invoke-RestMethod -Uri $url -Method GET -Headers $headers
+    return $response
+}
+
 function Delete-Logs {
     param ($RE4Path)
 
@@ -256,32 +256,31 @@ Write-Host @"
                                                                    
 "@ -ForegroundColor Red
 Check-ForUpdates
+$config = Load-Configuration
+if (-not $config.BiorandToken) {
+    Write-Host "No Biorand token found in configuration. Initiating login..."
+    Login-Biorand
+    $config = Load-Configuration
+}
 Write-Host ""
 Write-Host "Select a randomizer profile:"
 Write-Host ""
-$Profiles.GetEnumerator() | ForEach-Object {
-    Write-Host "$($_.Value): $($_.Key)" -ForegroundColor Red
+$allProfiles = Get-BiorandProfiles -Token $config.BiorandToken
+Write-Host "Available profiles:"
+$allProfiles | ForEach-Object {
+    Write-Host "$($_.id): $($_.name) by $($_.userName)" -ForegroundColor Red
 }
 Write-Host ""
 $selectedProfileID = Read-Host "Enter profile ID (default is 7)"
 if (-not $selectedProfileID) {
     $selectedProfileID = 7
 }
-if (-not ($Profiles.Values -contains [int]$selectedProfileID)) {
+if (-not ($allProfiles.id -contains [int]$selectedProfileID)) {
     Write-Host "Invalid profile ID. Exiting..." -ForegroundColor Red
     exit 1
 }
 
 Write-Host "Generating new seed..." -ForegroundColor Cyan
-
-$config = Load-Configuration
-
-if (-not $config.BiorandToken) {
-    Write-Host "No Biorand token found in configuration. Initiating login..."
-    Login-Biorand
-    $config = Load-Configuration
-}
-
 
 Write-Host "RE4 path: $($config.RE4InstallPath)"
 Write-Host "Profile ID: $selectedProfileID"
@@ -345,8 +344,6 @@ for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
         else {
             throw "Unknown seed status."
         }
-   
-
     }
     catch {
         Write-Host "`nError querying status: $_" -ForegroundColor Red
