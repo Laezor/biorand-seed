@@ -2,9 +2,9 @@
     Script Name: BIORAND Randomizer Seed Generator
     Author: Laezor
     Discord: Laezor#5385
-    Version: 1.2
+    Version: 1.3
     Created: 2024-12-18
-    Updated: 2024-12-21
+    Updated: 2024-12-22
 
     Description:
     This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil 4 Remake.
@@ -34,6 +34,7 @@
 $Profiles = @{
     "Main Game - Balanced Combat Randomizer by 7rayD" = 7
     "Main Game - Challenging Randomizer by 7rayD"     = 455
+    "Main Game - Toxic Combat by 7rayD"               = 11845
     "Separate Ways - Challenging *WIP by 7rayD"       = 9919
     "Separate Ways - Balanced *WIP by 7rayD"          = 10415
 }
@@ -54,7 +55,7 @@ $GamePath = "C:\\Path\\To\\RE4\\Install"
 #functions
 
 function Check-ForUpdates {
-    $currentVersion = "1.2" # Current script version
+    $currentVersion = "1.3" # Current script version
     $releasesUrl = "https://api.github.com/repos/laezor/biorand-seed/releases/latest"
     $scriptUrl = "https://raw.githubusercontent.com/laezor/biorand-seed/main/biorand-seed.ps1" # URL to download the latest script
     try {
@@ -83,7 +84,7 @@ function Check-ForUpdates {
             }
         }
         else {
-            Write-Host "You are using the latest version." -ForegroundColor Green
+            Write-Host "You are using the latest $currentVersion version." -ForegroundColor Green
         }
     }
     catch {
@@ -242,10 +243,24 @@ function Unzip-Seed {
 }
 
 # Main Script
+Write-Host @"
+
+
+██████╗ ██╗ ██████╗ ██████╗  █████╗ ███╗   ██╗██████╗ 
+██╔══██╗██║██╔═══██╗██╔══██╗██╔══██╗████╗  ██║██╔══██╗
+██████╔╝██║██║   ██║██████╔╝███████║██╔██╗ ██║██║  ██║
+██╔══██╗██║██║   ██║██╔══██╗██╔══██║██║╚██╗██║██║  ██║
+██████╔╝██║╚██████╔╝██║  ██║██║  ██║██║ ╚████║██████╔╝
+╚═════╝ ╚═╝ ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ 
+                                                      
+                                                                   
+"@ -ForegroundColor Red
 Check-ForUpdates
+Write-Host ""
 Write-Host "Select a randomizer profile:"
+Write-Host ""
 $Profiles.GetEnumerator() | ForEach-Object {
-    Write-Host "$($_.Value): $($_.Key)"
+    Write-Host "$($_.Value): $($_.Key)" -ForegroundColor Red
 }
 Write-Host ""
 $selectedProfileID = Read-Host "Enter profile ID (default is 7)"
