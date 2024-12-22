@@ -13,6 +13,7 @@
 - Automatic configuration management.
 - Seed generation and downloading.
 - Automatic unzipping.
+- Auto-Updater prompt.
 
 ---
 
