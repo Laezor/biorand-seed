@@ -2,9 +2,9 @@
     Script Name: BIORAND Randomizer Seed Generator
     Author: Laezor
     Discord: Laezor#5385
-    Version: 1.4
+    Version: 1.5
     Created: 2024-12-18
-    Updated: 2024-12-22
+    Updated: 2024-12-23
 
     Description:
     This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil 4 Remake.
@@ -17,19 +17,19 @@
     Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
     to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
     and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
+    
     The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
+    
     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
+    
     Notes:
     - Ensure you have PowerShell 5.1+ installed.
     - Requires access to the Biorand API and a valid API token.
-    - Edit the `reseed-config.json` file to set the path to the Resident Evil 4 installation and Biorand token.
-#>
-
+    - Edit the `biorand-config.json` file to set the path to the Resident Evil 4 installation and Biorand token.
+    #>
+    
 # Constants
 $DeleteLogsFromExtraction = @(
     "config.json",
@@ -37,52 +37,16 @@ $DeleteLogsFromExtraction = @(
     "input_leon.log",
     "process_leon.log"
 )
-
+    
 $BaseApi = "https://api.biorand.net"
 $biorand_sign_in = "$BaseApi/auth/signin"
-$configPathName = "./reseed-config.json"
-$GamePath = "C:\\Path\\To\\RE4\\Install"
-
+$configPathName = "./biorand-config.json"
+$RE4GamePath = "C:\\Path\\To\\RE4\\Install"
+$PollingIntervalSeconds = 5
+$MaxAttempts = 10
+$downloadUrl = $null
 
 #functions
-function Check-ForUpdates {
-    $currentVersion = "1.4" # Current script version
-    $releasesUrl = "https://api.github.com/repos/laezor/biorand-seed/releases/latest"
-    $scriptUrl = "https://raw.githubusercontent.com/laezor/biorand-seed/main/biorand-seed.ps1" # URL to download the latest script
-    try {
-        $response = Invoke-RestMethod -Uri $releasesUrl -Method GET
-        $latestVersion = $response.tag_name.TrimStart('v') # Assuming tags are prefixed with 'v', e.g., 'v1.3'
-        $description = $response.body
-        if ($latestVersion -gt $currentVersion) {
-            Write-Host "Current Version: $currentVersion"
-            Write-Host "Latest Version from GitHub: $latestVersion"
-            Write-Host "Description: $description"
-            $updateConfirmation = Read-Host "A new version ($latestVersion) is available. Do you want to update? (y/n)"
-            if ($updateConfirmation -eq "y") {
-                Write-Host "Downloading update..." -ForegroundColor Cyan
-                
-                # Alternative way to get the script path
-                $scriptPath = $PSCommandPath
-                if (-not $scriptPath) {
-                    throw "Script path is null or empty."
-                }
-                Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath -UseBasicParsing
-                Write-Host "Update downloaded. Please restart the script." -ForegroundColor Green
-                exit 0
-            }
-            else {
-                Write-Host "Update skipped." -ForegroundColor Yellow
-            }
-        }
-        else {
-            Write-Host "You are using the latest $currentVersion version." -ForegroundColor Green
-        }
-    }
-    catch {
-        Write-Host "Failed to check for updates: $_" -ForegroundColor Red
-    } 
-}
-
 function Get-BiorandProfiles {
     param ($Token)
     
@@ -115,10 +79,10 @@ function Generate-Seed {
 function Load-Configuration {
     $configPath = $configPathName
     if (-not (Test-Path $configPath)) {
-        Write-Host "Configuration file not found. Creating a default reseed-config.json..." -ForegroundColor Yellow
+        Write-Host "Configuration file not found. Creating a default biorand-config.json..." -ForegroundColor Yellow
 
         $defaultConfig = @{
-            RE4InstallPath = $GamePath
+            RE4InstallPath = $RE4GamePath
             BiorandToken   = ""
         } | ConvertTo-Json -Depth 2
 
@@ -131,7 +95,7 @@ Default configuration file created at $configPath.
 
     $config = Get-Content $configPath | ConvertFrom-Json
 
-    if (-not $config.RE4InstallPath -or $config.RE4InstallPath -eq $GamePath) {
+    if (-not $config.RE4InstallPath -or $config.RE4InstallPath -eq $RE4GamePath) {
         $config.RE4InstallPath = Read-Host "Enter your RE4 installation path right where Game Executable is."
         $config | ConvertTo-Json -Depth 2 | Out-File -FilePath $configPathName -Encoding UTF8
     }
@@ -162,7 +126,7 @@ function Login-Biorand {
         }
         else {
             @{
-                RE4InstallPath = $GamePath
+                RE4InstallPath = $RE4GamePath
                 BiorandToken   = ""
             }
         }
@@ -170,7 +134,7 @@ function Login-Biorand {
         $config.BiorandToken = $response.token
         $config | ConvertTo-Json -Depth 2 | Out-File -FilePath $configPath -Encoding UTF8
 
-        Write-Host "Login successful! Token saved to reseed-config.json." -ForegroundColor Green
+        Write-Host "Login successful! Token saved to biorand-config.json." -ForegroundColor Green
     }
     else {
         Write-Host "Login failed. Please check your email and code." -ForegroundColor Red
@@ -236,14 +200,25 @@ function Download-SeedZip {
     return $zipPath
 }
 
-function Unzip-Seed {
-    param ($ZipPath, $Dest)
-
-    Expand-Archive -Path $ZipPath -DestinationPath $Dest -Force
+function Get-BiorandStats {   
+    $url = "$BaseApi/rando/stats"
+    
+    try {
+        $response = Invoke-RestMethod -Uri $url -Method GET 
+        Write-Host "`nBiorand Community Statistics:" -ForegroundColor Cyan
+        Write-Host "Total Seeds Generated: $($response.randoCount)" -ForegroundColor Green
+        Write-Host "Total Profiles Created: $($response.profileCount)" -ForegroundColor Green
+        Write-Host "Total Users: $($response.userCount)" -ForegroundColor Green
+        Write-Host ""
+    }
+    catch {
+        Write-Host "Unable to fetch Biorand statistics" -ForegroundColor Yellow
+    }
 }
 
 # Main Script
-Check-ForUpdates
+Write-Host "Current Version: v1.5" -ForegroundColor Green
+Get-BiorandStats
 $config = Load-Configuration
 if (-not $config.BiorandToken) {
     Write-Host "No Biorand token found in configuration. Initiating login..."
@@ -306,12 +281,9 @@ catch {
     exit 1
 }
 
-$PollingIntervalSeconds = 5
-$MaxAttempts = 10
 
 Write-Host "Waiting for seed to generate..."
 
-$downloadUrl = $null
 
 for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
     try {
@@ -360,7 +332,7 @@ catch {
 Write-Host ""
 Write-Host "Unzipping seed zip..."
 try {
-    Unzip-Seed -ZipPath $zipPath -Dest $config.RE4InstallPath
+    Expand-Archive -Path $ZipPath -DestinationPath $config.RE4InstallPath -Force
     Write-Host "Reseeding completed successfully!"
     Delete-Logs -RE4Path $config.RE4InstallPath
     Write-Host "Have fun in your biorand permadeath run! - https://re4r.biorand.net" -ForegroundColor Green
