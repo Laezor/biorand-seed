@@ -31,11 +31,13 @@
 
 1. **Run the Script**
 
+   [⬇️ Download run-online.bat](https://raw.githubusercontent.com/Laezor/biorand-seed/refs/heads/main/run-online.bat)
+
+   Simply download and double-click `run-online.bat` (Recommended)
+
    ```batch
    run-online.bat
    ```
-
-   Simply download and double-click `run-online.bat` (Recommended)
 
    or manually run the PowerShell script:
 
