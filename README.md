@@ -1,29 +1,29 @@
 # BIORAND Randomizer Seed Generator
 
-#### This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil 4 Remake.
+#### This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil games.
 
 ---
 
 ## Features
 
-- Support for various randomizer profiles:
-  - **Main Game - Balanced Combat Randomizer** by 7rayD
-  - **Main Game - Challenging Randomizer** by 7rayD
-  - **Main Game - Toxic Combat** by 7rayD
-  - **Separate Ways - Challenging (WIP)** by 7rayD
-  - **Separate Ways - Balanced (WIP)** by 7rayD
-- Automatic configuration management.
-- Seed generation and downloading.
-- Automatic unzipping.
+- Support for multiple Resident Evil games:
+  - **Resident Evil 4 Remake**
+  - **Resident Evil 2 Remake**
+- Multiple randomizer profiles for each game
+- Automatic configuration management
+- Seed generation and downloading
+- Automatic unzipping to correct game directory
 - Running latest version every time through run-online.bat
 
 ---
 
 ## Prerequisites
 
-- PowerShell 5.1 or higher.
-- A Biorand account.
-- Resident Evil 4 Remake Game.
+- PowerShell 5.1 or higher
+- A Biorand account
+- Resident Evil game(s):
+  - Resident Evil 4 Remake
+  - Resident Evil 2 Remake (Must have Early Access to generate seeds)
 
 ---
 
@@ -49,38 +49,32 @@
 
    - If no API token is found in the configuration file, the script will prompt you to log in using your Biorand email and verification code.
 
-3. **Select a Randomizer Profile**
+3. **Select Game and Profile**
 
-   - Choose a profile from the displayed list by entering its ID.
+   - Choose which game you want to randomize (RE4R or RE2R)
+   - Select from available randomizer profiles for the chosen game
+   - The script will handle downloading and installing to the correct game directory
 
-4. **Generate and Download a Seed**
+4. **Configuration**
 
-   - The script will generate a random seed, query its status, and download the seed zip file upon completion.
-
-5. **Unzip and Install the Seed**
-   - The script will automatically unzip the seed into the specified Resident Evil 4 installation directory.
+   The script will create a `biorand-config.json` file to store:
+   - Your Biorand API token
+   - RE4 Remake installation path
+   - RE2 Remake installation path
 
 ---
 
-## Configuration File
+## Support
 
-The `biorand-config.json` file contains the following fields:
-
-```json
-{
-  "RE4InstallPath": "C:\\Path\\To\\RE4\\Install",
-  "BiorandToken": ""
-}
-```
-
-- **`RE4InstallPath`**: The full path to your Resident Evil 4 Remake installation directory.
-- **`BiorandToken`**: Your API token for the Biorand service.
+For help and updates, visit:
+- RE4R: https://re4r.biorand.net
+- RE2R: https://re2r.biorand.net
 
 ---
 
 ## License
 
-This project is licensed under the MIT License. See the script header for details.
+MIT License - see LICENSE file for details.
 
 ---
 
@@ -94,5 +88,5 @@ This project is licensed under the MIT License. See the script header for detail
 
 ## Notes
 
-- Ensure your Resident Evil 4 Remake installation is valid and accessible (verify your game files through steam).
-- Have fun exploring new randomized experiences in Resident Evil 4 Remake!
+- Ensure your Resident Evil game installations are valid and accessible (verify your game files through steam).
+- Have fun exploring new randomized experiences in Resident Evil games!

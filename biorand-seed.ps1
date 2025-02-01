@@ -2,12 +2,12 @@
     Script Name: BIORAND Randomizer Seed Generator
     Author: Laezor
     Discord: Laezor#5385
-    Version: 1.5
+    Version: 2.0
     Created: 2024-12-18
-    Updated: 2024-12-23
+    Updated: 2025-02-01
 
     Description:
-    This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil 4 Remake.
+    This PowerShell script automates the process of generating and downloading randomized seeds for Resident Evil games.
     It supports multiple randomizer profiles, such as Balanced Combat and Challenging profiles, and interacts
     with the Biorand API for randomization.
 
@@ -27,46 +27,58 @@
     Notes:
     - Ensure you have PowerShell 5.1+ installed.
     - Requires access to the Biorand API and a valid API token.
-    - Edit the `biorand-config.json` file to set the path to the Resident Evil 4 installation and Biorand token.
+    - Edit the `biorand-config.json` file to set the path to the Resident Evil 4 and 2 installations and Biorand token.
     #>
     
 # Constants
 $DeleteLogsFromExtraction = @(
     "config.json",
-    "output_leon.log",
-    "input_leon.log",
-    "process_leon.log"
+    "*.log"
 )
     
 $BaseApi = "https://api.biorand.net"
 $biorand_sign_in = "$BaseApi/auth/signin"
 $configPathName = "./biorand-config.json"
 $RE4GamePath = "C:\\Path\\To\\RE4\\Install"
+$RE2GamePath = "C:\\Path\\To\\RE2\\Install"
 $PollingIntervalSeconds = 5
-$MaxAttempts = 10
 $downloadUrl = $null
 
 #functions
-function Get-BiorandProfiles {
+function Get-BiorandGames {
     param ($Token)
     
-    $url = "$BaseApi/profile"
+    $url = "$BaseApi/game"
+    $headers = @{ "Authorization" = "Bearer $Token" }
+    $response = Invoke-RestMethod -Uri $url -Method GET -Headers $headers
+    return $response
+}
+
+function Get-BiorandProfiles {
+    param (
+        $Token,
+        $GameId
+    )
+    
+    $url = "$BaseApi/profile?game=$GameId"
     $headers = @{ "Authorization" = "Bearer $Token" }
     $response = Invoke-RestMethod -Uri $url -Method GET -Headers $headers
     return $response
 }
 
 function Delete-Logs {
-    param ($RE4Path)
+    param ($GamePath)
 
-    foreach ($file in $DeleteLogsFromExtraction) {
-        $filePath = Join-Path -Path $RE4Path -ChildPath $file
-        if (Test-Path $filePath) {
-            Remove-Item $filePath -Force
-            Write-Host "Deleted: $filePath" -ForegroundColor Green
-        }
-        else {
-            Write-Host "File not found: $filePath" -ForegroundColor Yellow
+    foreach ($pattern in $DeleteLogsFromExtraction) {
+        $files = Get-ChildItem -Path $GamePath -Filter $pattern -File
+        foreach ($file in $files) {
+            try {
+                Remove-Item $file.FullName -Force
+                Write-Host "Deleted: $($file.Name)" -ForegroundColor Green
+            }
+            catch {
+                Write-Host "Failed to delete: $($file.Name) - $_" -ForegroundColor Yellow
+            }
         }
     }
 }
@@ -83,6 +95,7 @@ function Load-Configuration {
 
         $defaultConfig = @{
             RE4InstallPath = $RE4GamePath
+            RE2InstallPath = $RE2GamePath
             BiorandToken   = ""
         } | ConvertTo-Json -Depth 2
 
@@ -97,13 +110,16 @@ Default configuration file created at $configPath.
 
     if (-not $config.RE4InstallPath -or $config.RE4InstallPath -eq $RE4GamePath) {
         $config.RE4InstallPath = Read-Host "Enter your RE4 installation path right where Game Executable is."
-        $config | ConvertTo-Json -Depth 2 | Out-File -FilePath $configPathName -Encoding UTF8
     }
-    if (-not $config.RE4InstallPath) {
+    if (-not $config.RE2InstallPath -or $config.RE2InstallPath -eq $RE2GamePath) {
+        $config.RE2InstallPath = Read-Host "Enter your RE2 installation path right where Game Executable is."
+    }
+    if (-not $config.RE4InstallPath -or -not $config.RE2InstallPath) {
         Write-Host "Invalid configuration. Please update $configPath with valid values." -ForegroundColor Red
         exit 1
     }
 
+    $config | ConvertTo-Json -Depth 2 | Out-File -FilePath $configPathName -Encoding UTF8
     return $config
 }
 
@@ -127,6 +143,7 @@ function Login-Biorand {
         else {
             @{
                 RE4InstallPath = $RE4GamePath
+                RE2InstallPath = $RE2GamePath
                 BiorandToken   = ""
             }
         }
@@ -143,23 +160,21 @@ function Login-Biorand {
 }
 
 function Get-BiorandProfile {
-    param ($ProfileID, $Token)
+    param (
+        $ProfileID,
+        $Token,
+        $GameId
+    )
     
-    $url = "$BaseApi/profile"
+    $url = "$BaseApi/profile/$ProfileID"
     $headers = @{ "Authorization" = "Bearer $Token" }
 
     $response = Invoke-RestMethod -Uri $url -Method GET -Headers $headers
-    $biorand_profile = $response | Where-Object { $_.id -eq $ProfileID }
-
-    if (-not $biorand_profile) {
-        throw "Profile with ID $ProfileID not found in Biorand API response."
-    }
-
-    return $biorand_profile
+    return $response
 }
 
 function Generate-BiorandSeed {
-    param ($Seed, $Biorand_profile, $Token)
+    param ($Seed, $Biorand_profile, $Token, $GameId)
     
     $url = "$BaseApi/rando/generate"
     $headers = @{
@@ -170,6 +185,7 @@ function Generate-BiorandSeed {
         profileId = $Biorand_profile.id
         seed      = $Seed
         config    = $Biorand_profile.config
+        gameId    = $GameId
     } | ConvertTo-Json -Depth 2
 
     $response = Invoke-RestMethod -Uri $url -Method POST -Headers $headers -Body $body
@@ -226,32 +242,52 @@ if (-not $config.BiorandToken) {
     $config = Load-Configuration
 }
 Write-Host ""
-Write-Host "Select a randomizer profile:"
-Write-Host ""
-$allProfiles = Get-BiorandProfiles -Token $config.BiorandToken
-Write-Host "Available profiles:"
-$allProfiles | ForEach-Object {
-    Write-Host "$($_.id): $($_.name) by $($_.userName)" -ForegroundColor Red
+
+# Get available games
+$games = Get-BiorandGames -Token $config.BiorandToken
+
+Write-Host "`nAvailable Games:" -ForegroundColor Cyan
+for ($i = 0; $i -lt $games.Count; $i++) {
+    Write-Host "$($i + 1). $($games[$i].name)"
+}
+
+$selectedGameIndex = Read-Host "`nSelect a game (1-$($games.Count))"
+$selectedGame = $games[$selectedGameIndex - 1]
+$gamePath = if ($selectedGame.moniker -eq "re4r") { $config.RE4InstallPath } else { $config.RE2InstallPath }
+
+Write-Host "`nSelected game: $($selectedGame.name)" -ForegroundColor Green
+
+# Get available profiles for the selected game
+Write-Host "Getting profiles for game: $($selectedGame.id)" -ForegroundColor Cyan
+$profiles = Get-BiorandProfiles -Token $config.BiorandToken -GameId $selectedGame.id
+
+Write-Host "`nAvailable profiles:"
+if ($profiles.Count -eq 0) {
+    Write-Host "No profiles found!" -ForegroundColor Red
+} else {
+    $profiles | ForEach-Object {
+        Write-Host "$($_.id): $($_.name) by $($_.userName)" -ForegroundColor Red
+    }
 }
 Write-Host ""
 $selectedProfileID = Read-Host "Enter profile ID (default is 7)"
 if (-not $selectedProfileID) {
     $selectedProfileID = 7
 }
-if (-not ($allProfiles.id -contains [int]$selectedProfileID)) {
+if (-not ($profiles.id -contains [int]$selectedProfileID)) {
     Write-Host "Invalid profile ID. Exiting..." -ForegroundColor Red
     exit 1
 }
 
 Write-Host "Generating new seed..." -ForegroundColor Cyan
 
-Write-Host "RE4 path: $($config.RE4InstallPath)"
+Write-Host "Game path: $gamePath"
 Write-Host "Profile ID: $selectedProfileID"
 Write-Host ""
 
 Write-Host "Getting randomizer profile..."
 try {
-    $biorand_profile = Get-BiorandProfile -ProfileID $selectedProfileID -Token $config.BiorandToken
+    $biorand_profile = Get-BiorandProfile -ProfileID $selectedProfileID -Token $config.BiorandToken -GameId $selectedGame.id
     Write-Host "Profile info downloaded."
     Write-Host "Profile name: $($biorand_profile.name)"
     Write-Host "Profile description: $($biorand_profile.description)"
@@ -274,44 +310,68 @@ if ($confirmation -ne "y") {
 Write-Host ""
 Write-Host "Generating seed on Biorand..."
 try {
-    $generation = Generate-BiorandSeed -Seed $seed -Biorand_profile $biorand_profile -Token $config.BiorandToken
+    $response = Generate-BiorandSeed -Seed $seed -Biorand_profile $biorand_profile -Token $config.BiorandToken -GameId $selectedGame.id
+    $generation = $response
 }
 catch {
     Write-Host "Error generating seed: $_" -ForegroundColor Red
     exit 1
 }
 
-
-Write-Host "Waiting for seed to generate..."
-
-
-for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+$progressParams = @{
+    Activity        = "Generating Biorand Seed"
+    Status          = "Waiting for generation to complete..."
+    PercentComplete = 0
+}
+$genStatus = $true
+while ($genStatus) {
     try {
         $status = Query-SeedStatus -GenerationID $generation.id -Token $config.BiorandToken
-       
-
-        if ($status.status -eq 1) {
-            Write-Host "Seed is queued for generation." 
-        }
-        elseif ($status.status -eq 2) {
-            Write-Host "Seed is being generated." 
-        }
-        elseif ($status.status -eq 3) {
-            Write-Host "`nSeed is done generating." -ForegroundColor Green
-            $downloadUrl = $status.downloadUrl
-            break
-        }
-        else {
-            throw "Unknown seed status."
+        
+        switch ($status.status) {
+            1 { 
+                Write-Progress @progressParams -CurrentOperation "Seed is queued for generation" -PercentComplete 25
+            }
+            2 { 
+                Write-Progress @progressParams -CurrentOperation "Seed is being generated" -PercentComplete 50
+            }
+            3 { 
+                Write-Progress -Activity "Generating Biorand Seed" -Status "Complete!" -PercentComplete 100 -Completed
+                Write-Host "`nSeed is done generating." -ForegroundColor Green
+                
+                # Get the patch file URL (first asset)
+                $patchAsset = $status.assets | Where-Object { $_.key -eq "1-patch" }
+                if ($patchAsset) {
+                    $downloadUrl = $patchAsset.downloadUrl
+                    Write-Host "Found patch file: $($patchAsset.fileName)" -ForegroundColor Green
+                    Write-Host $patchAsset.description -ForegroundColor Cyan
+                } else {
+                    throw "Patch file not found in assets"
+                }
+                
+                $genStatus = $false
+            }
+            4 {
+                Write-Progress -Activity "Generating Biorand Seed" -Status "Failed!" -PercentComplete 100 -Completed
+                if ($status.failReason) {
+                    Write-Host "`nSeed generation failed: $($status.failReason)" -ForegroundColor Red
+                } else {
+                    Write-Host "`nSeed generation failed with unknown reason" -ForegroundColor Red
+                }
+                exit 1
+            }
+            default { throw "Unknown seed status." }
         }
     }
     catch {
+        Write-Progress -Activity "Generating Biorand Seed" -Status "Error" -PercentComplete 100 -Completed
         Write-Host "`nError querying status: $_" -ForegroundColor Red
         exit 1
     }
 
     Start-Sleep -Seconds $PollingIntervalSeconds
 }
+
 
 if (-not $downloadUrl) {
     Write-Host "`nSeed generation timed out. Aborting." -ForegroundColor Red
@@ -332,10 +392,10 @@ catch {
 Write-Host ""
 Write-Host "Unzipping seed zip..."
 try {
-    Expand-Archive -Path $ZipPath -DestinationPath $config.RE4InstallPath -Force
+    Expand-Archive -Path $ZipPath -DestinationPath $gamePath -Force
     Write-Host "Reseeding completed successfully!"
-    Delete-Logs -RE4Path $config.RE4InstallPath
-    Write-Host "Have fun in your biorand permadeath run! - https://re4r.biorand.net" -ForegroundColor Green
+    Delete-Logs -GamePath $gamePath
+    Write-Host "Have fun in your biorand permadeath run! - https://$($selectedGame.moniker).biorand.net" -ForegroundColor Green
 }
 catch {
     Write-Host "Failed to unzip seed: $_" -ForegroundColor Red
