@@ -233,7 +233,7 @@ function Get-BiorandStats {
 }
 
 # Main Script
-Write-Host "Current Version: v1.5" -ForegroundColor Green
+Write-Host "Current Version: v2.0" -ForegroundColor Green
 Get-BiorandStats
 $config = Load-Configuration
 if (-not $config.BiorandToken) {
