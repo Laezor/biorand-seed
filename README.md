@@ -13,7 +13,7 @@
 - Automatic configuration management
 - Seed generation and downloading
 - Automatic unzipping to correct game directory
-- Running latest version every time through run-online.bat
+- Running latest version every time through run-online.ps1
 
 ---
 
