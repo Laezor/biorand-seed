@@ -19,7 +19,7 @@
 
 ## Prerequisites
 
-- PowerShell 5.1 or higher
+- PowerShell 5.1 or higher (recommended to have powershell 7)
 - A Biorand account
 - Resident Evil game(s):
   - Resident Evil 4 Remake
